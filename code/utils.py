@@ -131,13 +131,13 @@ def mat_exp(M, ord=20):
 
 def tensor_prod(n=1):
     """
-    Returns a function that calculates the matrix Tensor product (Kronecker product or \odot) via recursive function composition
+    Returns a function that calculates the matrix Tensor product (Kronecker product or \otimes) via recursive function composition
 
     Parameters
     ----------
     n : int
         Number of times to take the Kronecker product
-        Equivalent to ``M^\odot n``
+        Equivalent to ``M^\otimes n``
         n == 1 => Identity or no tensor product
         For usage, see `GI_quantum_test()` below.
 
@@ -151,8 +151,8 @@ def tensor_prod(n=1):
     if n == 1:
         return lambda x, y: x # Identity
     elif n == 2:
-        return np.kron # M \odot M
-    # Recursively calculate M \odot ... \odot M | "Normal ordering" (left to right)
+        return np.kron # M \otimes M
+    # Recursively calculate M \otimes ... \otimes M | "Normal ordering" (left to right)
     return lambda M1, M2: np.kron(M1, tensor_prod(n - 1)(M1, M2))
 
 """
