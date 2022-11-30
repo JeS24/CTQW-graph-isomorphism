@@ -1,0 +1,322 @@
+\documentclass[twocolumn,a4paper,english,10pt]{article}
+\usepackage{abstract}
+\usepackage{float}
+\usepackage[
+backend=biblatex,
+style=alphabetic,
+]{biblatex}
+\addbibresource{ref.bib}
+
+% Import custom commands
+\input{custom.tex}
+
+\begin{document}
+
+\setlength{\columnsep}{0.75cm}
+
+\renewcommand\thesection{\Roman{section}.}
+\renewcommand\thesubsection{\Roman{subsection}.}
+
+\renewcommand\abstractnamefont{\normalfont\normalsize\bfseries}
+\renewcommand\abstracttextfont{\normalfont\small}
+\setlength{\absleftindent}{0pt}
+\setlength{\absrightindent}{0pt}
+
+\newtheorem{definition}{Definition}
+
+\title{P475 -- Special Topics in Quantum Mechanics\\Semester Project Report}
+\author{
+    Jyotirmaya Shivottam\\
+    1711069\\
+    \small\href{mailto:jyotirmaya.shivottam@niser.ac.in}{jyotirmaya.shivottam@niser.ac.in}
+}
+\date{}
+
+\maketitle
+
+\begin{abstract}
+    In this term paper project, we have looked into Rudinger et al's paper \cite{main}, on 
+    the \textit{application of non-interacting multiparticle continuous-time quantum 
+    random walks (CTQWs) to the Graph Isomorphism (GI) problem for strongly 
+    regular graphs (SRGs)}. We have implemented their algorithm and tried to replicate 
+    their results and contrasted them with a classical GI test. 
+    We have also explored the empirical run-time and space complexity 
+    of their algorithm.
+\end{abstract}
+
+\section{Introduction}
+Before proceeding into the overview of the work done by the authors, we require the definitions of a few terms.
+
+\subsection{Key terms}
+
+\begin{definition}
+    Two graphs $G$ and $H$ are said to be isomorphic, if there exists a bijection 
+    $\phi: V(G) \rightarrow V(H)$ such that for every edge, $e \in E(G)$, there exists 
+    an edge, $f \in E(H)$, such that $\phi(e) = f$. Here, $V$ and $E$ denote the vertex and 
+    edge sets respectively.
+\end{definition}
+
+\begin{definition}
+    The adjacency matrix of a graph $G$ is a $N \times N$ matrix, $A$, such that
+    \begin{equation*}
+        A_{ij} = \begin{cases}
+            1, & \text{if } (i,j) \in E(G). \\
+            0, & \text{otherwise},
+        \end{cases}
+    \end{equation*}
+    where, $N$ is the number of vertices in $G$. The adjacency matrix of a graph $G$ is
+    symmetric and has $2m$ non-zero entries, where $m$ is the number of edges in $G$.
+\end{definition}
+
+In terms of the adjacency matrices, $A_G$ \& $A_H$, of two graphs, the isomorphism 
+can be defined as the existence of a permutation matrix, $P$, such that $PA_GP^T = A_H$. Here, 
+the permutation matrix represents a relabeling of the vertices of $G$ to the vertices of $H$. As 
+the name suggests, the GI problem is to ascertain whether two graphs are isomorphic or not. \picc{../slides/gi_wiki} 
+presents a simple example of the GI problem. The GI problem is in the $NP$ complexity class and is 
+purported to be $NP$-Intermediate (if $P \neq NP$).
+
+\piclw{../slides/gi_wiki}{A simple example of the Graph Isomorphism problem, highlighting the relabeling of vertices \cite{wiki2}}
+
+\begin{definition}
+    A strongly regular graph (SRG), denoted as $\text{srg}(v, k, \lambda, \mu)$, is a \textit{distance-regular} graph with the following properties:
+    \begin{enumerate}
+        \item Every two adjacent vertices have $\lambda$ common neighbors.
+        \item Every two non-adjacent vertices have $\mu$ common neighbors.
+    \end{enumerate}
+\end{definition}
+
+\pics{../slides/peter}{The Petersen graph, $\text{srg}(10, 3, 0, 1)$ \cite{wiki}}{0.2}
+
+Usually, the notation, $\text{srg}(v, k, \lambda, \mu)$, denotes a family of graphs. 
+\picc{../slides/peter} shows an example of a SRG is the \textit{Petersen graph}, parameterized as $\text{srg}(v=10, k=3, \lambda=0, \mu=1)$. 
+The adjacency matrix of a SRG satisfies certain useful identities that have been listed below:
+\begin{align*}
+    A^2 &= (k - \mu)I + \mu J + (\lambda - \mu)A, \\
+    JA &= AJ = kA, \\
+    J^2 &= NJ,
+\end{align*}
+where, $I$ is the identity matrix, $J$ is the all-ones matrix, and $N$ is number of vertices. 
+Using these, we find that $\{I, J, A\}$ forms a commutative 3-dimensional algebra, which leads us to:
+\begin{align*}
+    A^n = \alpha_n I + \beta_n J + \gamma_n A,
+\end{align*}
+where, $\alpha_n, \beta_n, \gamma_n$ are constants dependent on the SRG under consideration, hence also called SRG family parameters.
+
+\subsection{Issues with distinguishing SRGs}
+In principle, the GI problem can be retooled as obtaining a canonical labeling via
+the automorphism group, which is also what many classical approaches exploit. However, there are several 
+issues with this approach, some of which are listed below:
+\begin{enumerate}
+    \item The automorphism group of a SRG family is non-trivial. Calculating it is computationally 
+    intractable at the moment.
+    \item Graphs in the same SRG family are co-spectral.
+    \item Each SRG signature defining a family can contain several graphs, for instance,
+    $\text{srg}(36, 15, 6, 6)$ has 32,548 graphs, which makes calculating the
+    automorphism group of the entire SRG family intractable.
+\end{enumerate}
+
+\subsection{Classical GI tests and limitations}
+
+There are several classical tests for GI, such as the \textit{Weisfeiler-Lehman (WL) test}, which is an iterative 
+procedure that uses heuristic-based color-refinement to produce canonical vertex-label sets. This test gives a 
+necessary but not sufficient condition for GI. In particular, the test fails in the presence of graph automorphisms, i.e., 
+mappings from the graph to itself that leave the graph unchanged. And, regular graphs usually have a large number of 
+automorphisms. The WL-test fails for SRGs, like the Petersen graph. Another classical test, which is also the state-of-the-art, 
+is the \textit{VF2++} test \cite{vf2} which is a recursive algorithm that uses \textit{partial edge-matching} for subgraph isomorphism. 
+While this test can be used to test SRG GI, the memory requirements grow exponentially with the number of vertices. Currently, 
+the best classical algorithm has a worst-case time complexity of $O(c^{\sqrt{N}\log N})$ \cite{main}, where $N$ is the number of vertices.
+
+In the paper, the authors have investigated the dynamics of non-interacting 
+multiparticle continuous-time quantum random walks (CTQWs) and their applicability 
+to the GI problem for SRGs. In the next section, we discuss their approach.
+
+\section{Paper's approach}
+The paper defines continuous-time quantum walks (CTQW) on graphs, using the Hubbard model, 
+without the short-range interaction term, where each site corresponds to a vertex.
+\eq{
+H = -\sum A_{ij}c_i^\dagger c_j
+}
+Here, $c_i^\dagger$ is the creation operator for a particle at site $i$, and 
+$A_{ij}$ is the adjacency matrix of the graph. For bosons, since 
+$[c_i, c_j^\dagger] = \delta_{ij}$ and $[c_i, c_j] = [c_i^\dagger, c_j^\dagger] = 0$, 
+we have symmetrized basis states, with multi-occupancy, while for fermions, 
+$\{c_i, c_j^\dagger\} = \delta_{ij}$ and $\{c_i, c_j\} = \{c_i^\dagger, c_j^\dagger\} = 0$ 
+implies anti-symmetrized basis states, with single-occupancy. This yields the $p$-boson or 
+$p$-fermion Hamiltonian as:
+\eq{
+_B\braket{i_1,\dots,i_p|H_{p, B}|j_1,\dots,j_p}_B &= \\
+-_B\braket{i_1,\dots,i_p&|A^{\oplus p}|j_1,\dots,j_p}_B \\
+_F\braket{i_1,\dots,i_p|H_{p, B}|j_1,\dots,j_p}_F &= \\
+_F\braket{i_1,\dots,i_p&|A^{\oplus p}|j_1,\dots,j_p}_F
+}
+where, $A^{\oplus p} = A\otimes I \otimes \dots + \dots + I \otimes \dots A$. From here, 
+the evolution operator is defined as usual, in the particles-on-vertices basis:
+\eq{
+U(t) = e^{-iHt}
+}
+The elements of the resulting evolution matrix are also termed as \textit{Green's functions}, in the 
+\textit{correlator} sense. These Green's functions form a unique certificate or signature for the graph. 
+This forms the theoretical basis of the paper's approach. Using this, the algorithm for using CTQW to distinguish the 
+non-isomorphic SRGs is as follows:
+\begin{enumerate}
+    \item For each graph in the SRG family:
+        \begin{enumerate}
+            \item Begin with the (complex) evolution matrix $U$.
+            \item Take the magnitude of each element.
+            \item Write all the (real) entries in a list, $X_A$.
+            \item Sort the list.
+        \end{enumerate}
+    \item Compare the lists pairwise for all graphs using $\Delta = \sum_v |X_A[v] - X_B[v]|$.
+\end{enumerate}
+If $\Delta \ne 0$, then $A$ and $B$ are non-isomorphic or distinguished. The converse is 
+however not true, because non-isomorphic non-distinguished graphs (false negatives) can 
+also have $\Delta = 0$. As an example, for the 3-particle walk, $U$ can be decomposed 
+as: $U_{3B} = U_1^{\otimes 3}$ or $U_{3F} = \overline{U}_1^{\otimes 3}$, where $U_1 = e^{iAt}$ 
+and $\overline{U}_1 = e^{-iAt}$. Recalling the 3-algebra, we can decompose 
+$U_1 = \alpha_n I + \beta_n J + \gamma_n A$, where the constants depend only on 
+SRG family parameters and $t$. Therefore, we have the following intuition as to why this 
+algorithm would work:
+\begin{enumerate}
+    \item All possible values of Green's functions are determined by the family parameters ($p = 3$).
+    \item Distinguishing power of the walks comes from the existence of at least one Green's 
+    function with different multiplicities for nonisomorphic graphs in the same family.
+\end{enumerate}
+Also, note that the reason for using the magnitude of Green's functions is that depending on the choice
+of basis, sign ambiguities can arise in $U$ (e.g. see \picc{../slides/lim2}). Taking a magnitude removes this ambiguity.
+
+\piclw{../slides/lim2}{Sign-ambiguities in $U$ (a potential limitation) \cite{main2}}
+\piclw{../slides/results}{SRG families tested for 3-particle walk by the authors \cite{main}}
+\piclw{../slides/res2}{SRG families tested for 4-particle walk by the authors \cite{main}}
+
+The authors have tested their approach on the SRG families listed in \picc{../slides/results} and \picc{../slides/res2}. 
+Based on these results, the authors have shown that 3-particle walks have significant, but not
+universal, distinguishing power on SRGs, something that 1 and 2-particle walks do not have \cite{main2}.
+The authors have also shown that 4-particle walks have remarkably higher distinguishing power, while both 
+bosonic and fermionic walks have similar performance, despite the fermionic walks having a
+smaller state space, owing to the Pauli exclusion principle.
+
+These calculations are quite computationally intensive. So, we have only been able to replicate a portion of their work. 
+We present our results \& a short discussion in the next section.
+
+\section{Results \& Discussion}
+We have implemented the algorithm as in the paper. The VF2++ algorithm was used for classical GI tests.
+Due to space constraints in this report, we have moved the details of the data sources, complete code \& design decision and extended results to our \href{https://github.com/JeS24/CTQW-graph-isomorphism}{GitHub repository} 
+for this project.
+
+In essence, we have verified the results of the paper for certain SRG families. We have also compared this work 
+with a prior work, where $1-$ and $2-$ particle walks were discussed \cite{main2}. The result tables can be found in the GitHub repository as well as in 
+Appendix - A at the end of this document. We list our findings, which overlap with the paper, below:
+\ul{
+    \1 1 \& 2-particle walks are unable to distinguish between graphs from the same
+    SRG family since the elements of $U$ are only dependent on the family parameters 
+    and are therefore all identical. \textit{Analytical proof of non-distinguishability can be found in \cite{proof}}.
+    \1 In contrast, $p = 3$ (\& $p = 4$) non-interacting CTQW has sufficient power to distinguish between 
+    non-isomorphic graphs from the same SRG family. We have replicated this result for $\text{srg}(16, 6, 2, 2)$ with 
+    $p = 3$ & $p = 4$, and $\text{srg}(26, 10, 3, 4)$ with only $p = 3$. CTQW with $p = 4$ led to an \texit{OutOfMemory} error.
+}
+As can be perused from the outputs on GitHub, the memory and time consumption of both the classical test as well as the CTQW-based test, are quite high.
+In the next section, we have discussed some potential extensions to this work.
+
+\section{Potential Extensions}
+There are several potential optimizations to the algorithm that can be made to this work. We have mentioned these in the 
+GitHub repository at \href{https://github.com/JeS24/CTQW-graph-isomorphism#potential-optimizations-for-the-implementation}{this link}, 
+in order to keep this report concise. Below, we list some extensions that could be made to this work. Some of these have been published since 
+the original work came out.
+\ul {
+    \1 The authors had purported that including the phase information might improve the
+    algorithm's results, especially for larger $p$ or larger $N$. However, Mahasinghe et al \cite{maha} 
+    have since shown that phase-modified CTQW is still unable to distinguish strongly regular
+    graphs; since Green's functions are still not unique.
+    \1 The authors studied the dynamics of CTQW. DTQW or discrete-time quantum walks are also worth considering,
+    since they evolve in a large state space, allowing them to possess more distinguishing power \cite{main3}.
+    \1 Wang et al \cite{wang} have presented an optimizing heuristic that omits the sorting step.
+    \1 Tamascelli et al \cite{tama} have presented a QW-inspired adiabatic algorithm to reduce the search
+    space and translate the problem to $2-$SAT.
+}
+All the references mentioned here can be found in Appendix - B, near the end of this document.
+
+\newpage
+\onecolumn{
+\section*{Appendix A - Result Tables}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|c|c}
+    \hline\hline
+    SRG Label & SRG family & N(Graphs) \\
+    \hline
+    A & (16, 6, 2, 2) & 2 \\
+    B & (26, 10, 3, 4) & 10 \\
+    C & (36, 14, 4, 6) & 180 \\
+    D & (40, 12, 2, 4) & 45 \\
+    \hline\hline
+\end{tabular}
+\caption{SRG families used in our testing. Labels mentioned here are used in the tables below.}
+\end{table}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|c|c|c|c|c}
+        \hline\hline
+        SRG & Number of & Boson & Fermion & Peak Mem Usage & Avg. CPU Time \\
+        Label & Comparisons & failures & failures & (in GB) & (in s) \\
+        \hline
+        A & 1 & 1 & 1 & 0.009 & 4.8 \\
+        B & 45 & 45 & 45 & 1.39 & 21.4 \\
+        C & 16,110 & 16,110 & 16,110 & 1.8 & 976 \\
+        D & 378 & 378 & 378 & 1.53 & 90.1 \\
+        \hline\hline
+    \end{tabular}
+    \caption{Results for $p = 1$ or 1-particle walk.}
+\end{table}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|c|c|c|c|c}
+        \hline\hline
+        SRG & Number of & Boson & Fermion & Peak Mem Usage & Avg. CPU Time \\
+        Label & Comparisons & failures & failures & (in GB) & (in s) \\
+        \hline
+        A & 1 & 1 & 1 & 0.009 & 5.1 \\
+        B & 45 & 45 & 45 & 1.92 & 35.4 \\
+        C & 16,110 & NA & NA & 3.36 & DNF ($> 2$ hrs) \\
+        D & 378 & 378 & 378 & 2.73 & 930 \\
+        \hline\hline
+    \end{tabular}
+    \caption{Results for $p = 2$ or 2-particle walk. (NA = Not Applicable. DNF = Did Not Finish.)}
+\end{table}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{c|c|c|c|c|c}
+        \hline\hline
+        SRG & Number of & Boson & Fermion & Peak Mem Usage & Avg. CPU Time \\
+        Label & Comparisons & failures & failures & (in GB) & (in s) \\
+        \hline
+        A & 1 & 0 & 0 & 0.5	& 9.1 \\
+        B & 45 & 1 & 1 & 112 & 2547.5 \\
+        C & 16,110 & NA & NA & $>$ 528 & DNF (OoM) \\
+        D & 378 & NA & NA & $>$ 528 & DNF (OoM) \\
+        \hline\hline
+    \end{tabular}
+    \caption{Results for $p = 3$ or 3-particle walk. (NA = Not Applicable. DNF = Did Not Finish. OoM = Out of Memory)}
+\end{table}
+\begin{table}[H]
+\centering
+\begin{tabular}{c|c|c|c|c|c}
+    \hline\hline
+    SRG & Number of & Boson & Fermion & Peak Mem Usage & Avg. CPU Time \\
+    Label & Comparisons & failures & failures & (in GB) & (in s) \\
+    \hline
+    A & 1 & 0 & 0 & 156 & 525.1 \\
+    B & 45 & NA & NA & $>$ 528 & DNF (OoM) \\
+    C & 16,110 & NA & NA & $>$ 528 & DNF (OoM) \\
+    D & 378 & NA & NA & $>$ 528 & DNF (OoM) \\
+    \hline\hline
+\end{tabular}
+\caption{Results for $p = 4$ or 4-particle walk. (NA = Not Applicable. DNF = Did Not Finish. OoM = Out of Memory)}
+\end{table}
+
+\newpage
+\section*{Appendix B}
+\printbibliography
+}
+
+\end{document}

@@ -137,7 +137,7 @@ $$
 
 ---
 # Difficulties in distinguishing SRGs
-* In principal, the GI problem can be retooled as calculating the canonical labeling via the automorphism group, which is also what classical approaches exploit.
+* In principle, the GI problem can be retooled as calculating the canonical labeling via the automorphism group, which is also what classical approaches exploit.
   * The automorphism group of a SRG family is a non-trivial group.
   * Calculating the automorphism group is a problem at least as hard as the GI problem.
   * There are no known polynomial time solutions to either problem.

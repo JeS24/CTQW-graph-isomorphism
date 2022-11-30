@@ -2,7 +2,7 @@
 ## Summary
 In this term paper project, I have looked into ***Rudinger et al's paper [1] on the application of non-interacting multiparticle continuous-time quantum random walks (CTQWs) to the Graph Isomorphism (GI) problem for strongly regular graphs (SRGs)***. I have implemented their algorithm and tried to replicate their results and contrasted them with a classical GI test. I have also explored the empirical run-time and space complexity of their algorithm.
 
-* A short report can be found in [`./report/`](./report/). [NOTE: TBD]
+* A short report can be found in [`./report/`](./report/).
 * Presentation slides are available at [`./slides/talk.pdf`](./slides/talk.pdf).
 * Explicit results for the considered SRG families can be found in [`./code/results/`](./code/results/). Summaries are available under _Results_ below.
 * The notebook at [`./code/example.ipynb`](./code/example.ipynb) can be perused for a quick overview of the code, while the full implementation is available in [`./code/utils.py`](./code/utils.py).

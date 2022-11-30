@@ -1,0 +1,111 @@
+% Packages
+\usepackage{amsmath,amsthm,amssymb,mathtools,mathpazo,physics,graphicx,booktabs,array,paralist,verbatim,fancyhdr,sectsty,hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[parfill]{parskip}
+\usepackage[margin=1in]{geometry}
+\usepackage{afterpage}
+\usepackage{pythonhighlight} % for python syntax highlighting
+\usepackage{outlines,xargs} % Better lists
+\usepackage{braket} % for braket notation
+
+% Remove this to get the plain LaTeX font
+\allsectionsfont{\sffamily\mdseries\upshape}
+
+% Fixing some annoyances
+\usepackage{textcomp}
+\newcommand{\tld}{\raisebox{0.5ex}{\:\texttildelow\:}} % For tilde
+\newcommand{\bigo}{\mathcal{O}} % Proper Big-O
+
+% Frontmatter
+% \newcommand{\makefront}[2]{
+    
+% }
+
+% Layout
+\renewcommand{\arraystretch}{1.2} 
+\newcommand{\s}{\section*}
+\newcommand{\sbs}{\subsection*}
+\newcommand{\sbss}{\subsubsection*}
+\newcommand{\n}{\newline}
+\newcommand{\np}{\newpage}
+\newcommand{\blankpage}{
+    \null
+    \thispagestyle{empty}
+    \addtocounter{page}{-1}
+    \newpage
+}
+
+% Math - USE OUTSIDE OF MATH ENVIRONMENT
+% \newcommand{\h}{$\hbar$} % Reduced Planck Constant
+% \newcommand{\kb}{$k_B$} % Boltzmann Constant
+% \newcommand{\cc}{$c$} % Speed of Light
+% \newcommand{\Ho}{$H_0$} % Hubble Parameter - Broken
+% \newcommand{\M}{$M_\odot$} % Solar Mass
+
+% Units with exponents - Deferred
+% \newcommand{\eV}[1]{$eV^{#1}$} % Electron-Volts
+% \newcommand{\GeV}[1]{$GeV^{#1}$} % Giga-Electron-Volts
+% \newcommand{\mpc}[1]{$Mpc^{#1}$} % Mega-parsec
+% \newcommand{\km}[1]{$km^{#1}$} % Kilo-Metre
+% \newcommand{\m}[1]{$m^{#1}$} % Metre
+% \newcommand{\cm}[1]{$cm^{#1}$} % Centi-Metre
+% \newcommand{\ts}[1]{$s^{#1}$} % Second - Convoluted
+% \newcommand{\K}[1]{$K^{#1}$} % Kelvin
+% \newcommand{\kg}[1]{$kg^{#1}$} % Kelvin
+
+
+% Shorthands for some built-ins
+% For pictures - \linewidth, [H] -- Don't use the file extension - keep image formats same, if possible
+\newcommand{\piclw}[2]{\begin{figure}\includegraphics[width=\linewidth]{#1}\caption{#2}\label{fig:#1}\end{figure}}
+% For pictures - \scale=VAR, [H] -- Don't use the file extension - keep image formats same, if possible
+\newcommand{\pics}[3]{\begin{figure}\centering\includegraphics[scale=#3]{#1}\caption{#2}\label{fig:#1}\end{figure}}
+
+% For un-numbered aligned equations
+\newcommand{\eq}[1]{
+    \begin{align*}
+        #1
+    \end{align*}
+}
+% For numbered aligned equations
+\newcommand{\eqn}[1]{
+    \begin{align}
+        #1
+    \end{align}
+}
+% Normal ordering operator
+\newcommand{\nord}[1]{{:}\mkern1mu#1\mkern1.6mu{:}}
+\newcommand{\bord}[1]{\braket{{:}\mkern1mu#1\mkern1.6mu{:}}}
+
+
+% Text shorthands for citation
+%F or Figures
+\newcommand{\picc}[1]{Fig.~\ref{fig:#1}}
+% For Figures, at the beginning of a line
+\newcommand{\piccl}[1]{Figure~\ref{fig:#1}}
+% For Tables
+\newcommand{\tabc}[1]{Table - \ref{tab:#1}}
+% For Appendices
+\newcommand{\appc}[1]{Appendix - \ref{appendix:#1}}
+% For Equations
+\newcommand{\eqc}[1]{Eq. (\ref{eq:#1})}
+% For Equations, at the beginning of a line
+\newcommand{\eqcl}[1]{Equation (\ref{eq:#1})}
+% For Sections
+\newcommand{\secc}[1]{Section - \ref{section:#1}}
+
+% Helpful Text Shorthands
+% Italics
+\newcommand{\ita}[1]{\textit{#1}}
+% Boldface
+\newcommand{\bfa}[1]{\textbf{#1}}
+% Lists
+\newcommand{\ol}[1]{ % ~ Unordered list
+    \begin{outline}[enumerate]
+    #1
+    \end{outline}
+}
+\newcommand{\ul}[1]{ % ~ Ordered list
+    \begin{outline}
+    #1
+    \end{outline}
+}
